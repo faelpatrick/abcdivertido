@@ -1,12 +1,17 @@
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { temas } from '../themes'
 
-const temaAtual = ref('padrao')
+const temaSalvo = localStorage.getItem('temaSelecionado') || 'padrao'
+const temaAtual = ref(temaSalvo)
+
+watch(temaAtual, (novoTema) => {
+  localStorage.setItem('temaSelecionado', novoTema)
+})
 
 export function useTema() {
   return {
     temaAtual,
-    tema: temas[temaAtual.value],
+    tema: computed(() => temas[temaAtual.value]),
     setTema(novo) {
       temaAtual.value = novo
     }

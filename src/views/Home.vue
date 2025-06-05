@@ -34,7 +34,10 @@ import { useTema } from '../stores/theme'
 import { computed } from 'vue'
 
 const router = useRouter()
-const { setTema, temaAtual, tema } = useTema()
+const { setTema, temaAtual } = useTema()
+import { temas } from '../themes'
+const tema = computed(() => temas[temaAtual.value])
+
 
 function selecionarTema(nome) {
   setTema(nome)

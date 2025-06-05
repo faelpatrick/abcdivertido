@@ -2,10 +2,11 @@
   <div class="animais" :style="{ background: tema.fundo, fontFamily: tema.fonte }">
     <h2 :style="{ color: tema.corTitulo }">🐾 Escreve o nome!</h2>
 
-    <div class="jogo">
-      <div class="letra-inicial">{{ palavraAtual[0] }}</div>
-
-      <div class="letras-faltantes">
+    <div v-if="palavraAtual" class="jogo">
+      <div class="palavra-display">
+        <span :class="{ correta: letraInicialOk }">
+          {{ palavraAtual[0] }}
+        </span>
         <span
           v-for="(letra, i) in letrasFaltando"
           :key="i"
@@ -16,7 +17,11 @@
       </div>
 
       <div class="alfabeto">
-        <button v-for="letra in alfabeto" :key="letra" @click="adicionarLetra(letra)">
+        <button
+          v-for="letra in alfabeto"
+          :key="letra"
+          @click="handleLetra(letra)"
+        >
           {{ letra }}
         </button>
       </div>
@@ -26,50 +31,100 @@
         <button @click="ajudaLigada = !ajudaLigada">
           {{ ajudaLigada ? '❌ Tirar Ajuda' : '💡 Ver Ajuda' }}
         </button>
+        <button v-if="palavraCompleta" @click="proximaPalavra">➡️ Próximo</button>
       </div>
 
       <div class="imagem" v-if="palavraCompleta">
         <img :src="imagemAtual" alt="animal" />
       </div>
     </div>
+
+    <p v-else>🔄 A carregar palavras...</p>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useTema } from '../stores/theme'
 
 const { tema } = useTema()
 
-// Exemplo com 2 palavras
-const dados = [
-  { palavra: 'ABELHA', imagem: '/assets/abelha.png' },
-  { palavra: 'BALEIA', imagem: '/assets/baleia.png' }
-]
-
+const lista = ref([])
 const indexAtual = ref(0)
 const ajudaLigada = ref(false)
 const inputUsuario = ref([])
+const letraInicialDigitada = ref("")
 
-const palavraAtual = computed(() => dados[indexAtual.value].palavra)
+const palavraAtual = computed(() => lista.value[indexAtual.value]?.palavra || "")
 const letrasFaltando = computed(() => palavraAtual.value.slice(1).split(''))
-const imagemAtual = computed(() => dados[indexAtual.value].imagem)
-
+const imagemAtual = computed(() => lista.value[indexAtual.value]?.imagem || "")
 const alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('')
 
-function adicionarLetra(letra) {
+const letraInicialOk = computed(() => letraInicialDigitada.value === palavraAtual.value[0])
+
+function handleLetra(letra) {
+  const upper = letra.toUpperCase()
+  if (!letraInicialOk.value) {
+    if (upper === palavraAtual.value[0]) {
+      letraInicialDigitada.value = upper
+    }
+    return
+  }
+
   if (inputUsuario.value.length < letrasFaltando.value.length) {
-    inputUsuario.value.push(letra)
+    inputUsuario.value.push(upper)
   }
 }
 
 function limpar() {
+  letraInicialDigitada.value = ""
   inputUsuario.value = []
 }
 
 const palavraCompleta = computed(() =>
+  letraInicialOk.value &&
   inputUsuario.value.join('') === letrasFaltando.value.join('')
 )
+
+function proximaPalavra() {
+  ajudaLigada.value = false
+  limpar()
+  const letraAtual = palavraAtual.value[0]
+  const proximaIndex = lista.value.findIndex(p => p.palavra[0] > letraAtual)
+  indexAtual.value = proximaIndex !== -1 ? proximaIndex : 0
+}
+
+async function carregarPalavras() {
+  const res = await fetch('/data/palavras.json')
+  const dados = await res.json()
+  lista.value = dados.sort((a, b) => a.palavra.localeCompare(b.palavra))
+}
+
+function handleKeydown(e) {
+  const key = e.key.toUpperCase()
+  if (alfabeto.includes(key)) {
+    handleLetra(key)
+  } else if (e.key === 'Backspace') {
+    if (inputUsuario.value.length > 0) {
+      inputUsuario.value.pop()
+    } else {
+      letraInicialDigitada.value = ""
+    }
+  }
+}
+
+onMounted(() => {
+  carregarPalavras()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
+
+watch(palavraCompleta, (val) => {
+  if (val) setTimeout(() => proximaPalavra(), 1500)
+})
 </script>
 
 <style scoped>
@@ -87,32 +142,29 @@ h2 {
   margin-top: 2rem;
 }
 
-.letra-inicial {
-  font-size: 4rem;
-  font-weight: bold;
-  color: #ff4081;
+.palavra-display {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
 }
 
-.letras-faltantes {
-  margin: 1rem 0;
-  font-size: 2rem;
-}
-
-.letras-faltantes span {
-  display: inline-block;
-  width: 2rem;
-  margin: 0 0.2rem;
+.palavra-display span {
   border-bottom: 2px dashed #999;
-}
-
-.letras-faltantes span.correta {
-  color: green;
-  border-color: green;
-  font-weight: bold;
-}
-
-.letras-faltantes span.ajuda {
+  min-width: 2rem;
+  display: inline-block;
   color: #999;
+}
+
+.palavra-display span.correta {
+  color: green;
+  font-weight: bold;
+  border-color: green;
+}
+
+.palavra-display span.ajuda {
+  color: #bbb;
 }
 
 .alfabeto {
