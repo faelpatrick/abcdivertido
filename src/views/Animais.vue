@@ -1,6 +1,6 @@
 <template>
-  <div class="animais">
-    <h2>🐾 Escreve o nome!</h2>
+  <div class="animais" :style="{ background: tema.fundo, fontFamily: tema.fonte }">
+    <h2 :style="{ color: tema.corTitulo }">🐾 Escreve o nome!</h2>
 
     <div class="jogo">
       <div class="letra-inicial">{{ palavraAtual[0] }}</div>
@@ -28,8 +28,8 @@
         </button>
       </div>
 
-      <div class="imagem">
-        <img v-if="palavraCompleta" :src="imagemAtual" alt="animal" />
+      <div class="imagem" v-if="palavraCompleta">
+        <img :src="imagemAtual" alt="animal" />
       </div>
     </div>
   </div>
@@ -37,8 +37,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useTema } from '../stores/theme'
 
-// Dados de exemplo, depois será dinâmico
+const { tema } = useTema()
+
+// Exemplo com 2 palavras
 const dados = [
   { palavra: 'ABELHA', imagem: '/assets/abelha.png' },
   { palavra: 'BALEIA', imagem: '/assets/baleia.png' }
@@ -73,37 +76,43 @@ const palavraCompleta = computed(() =>
 .animais {
   text-align: center;
   padding: 2rem;
-  font-family: 'Comic Sans MS', cursive;
-  background: linear-gradient(to bottom, #fffde7, #e1f5fe);
   min-height: 100vh;
+}
+
+h2 {
+  font-size: 2rem;
+}
+
+.jogo {
+  margin-top: 2rem;
 }
 
 .letra-inicial {
   font-size: 4rem;
-  color: #ff4081;
   font-weight: bold;
+  color: #ff4081;
 }
 
 .letras-faltantes {
+  margin: 1rem 0;
   font-size: 2rem;
-  margin: 1rem;
 }
 
 .letras-faltantes span {
   display: inline-block;
   width: 2rem;
-  border-bottom: 2px dashed #ccc;
   margin: 0 0.2rem;
+  border-bottom: 2px dashed #999;
 }
 
 .letras-faltantes span.correta {
   color: green;
-  font-weight: bold;
   border-color: green;
+  font-weight: bold;
 }
 
 .letras-faltantes span.ajuda {
-  color: #aaa;
+  color: #999;
 }
 
 .alfabeto {
@@ -142,15 +151,17 @@ const palavraCompleta = computed(() =>
   cursor: pointer;
 }
 
-.imagem img {
+.imagem {
   margin-top: 2rem;
+}
+
+.imagem img {
   max-width: 200px;
-  transition: transform 0.5s;
-  animation: piscar 1s infinite alternate;
+  animation: piscar 0.8s infinite alternate;
 }
 
 @keyframes piscar {
-  from { filter: brightness(0.7); }
-  to { filter: brightness(1.1); }
+  from { filter: brightness(0.8); }
+  to { filter: brightness(1.2); }
 }
 </style>
