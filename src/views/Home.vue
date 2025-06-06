@@ -95,6 +95,8 @@ h1 {
 .menu {
   display: flex;
   flex-direction: column;
+	justify-content: center;
+	align-items: center;
   gap: 1.5rem;
   margin-top: 2rem;
 }
